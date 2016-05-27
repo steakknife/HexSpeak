@@ -1,6 +1,8 @@
 (ns thanassis.hexspeak
   (:gen-class))
 
+(require '[criterium.core :as cc])
+
 (set! *warn-on-reflection* true)
 
 (defn good-words [rdr letters]
@@ -63,10 +65,22 @@
         letters (nth args 1 "abcdef")
         dictionary-file (nth args 2 "/usr/share/dict/words")
         counter (volatile! 0) ; faster than atom
-        words-per-length (get-words-per-length dictionary-file letters)]
-    (dotimes [n 10]
-      (do
-        (vreset! counter 0)
-        (time (solve words-per-length phrase-length 0 #{} counter))
-        (printf "Total: %d\n" @counter)))
-        (flush)))
+        words-per-length (get-words-per-length dictionary-file letters)
+        compute-algorithm #(do
+                  (vreset! counter 0)
+                  (solve words-per-length phrase-length 0 #{} counter)
+                  @counter)]
+    (do
+      ; Are we benchmarking (i.e. env var BENCHMARKING=1?)
+      (if (not= "1" (System/getenv "BENCHMARKING"))
+        ; Nope, we're not benchmarking - just show the resulting count
+        ; produced by the algorithm - i.e. via calling 'solve'.
+        (do
+          (printf "Total: %d\n" (compute-algorithm)))
+        ; Yep, we're benchmarking - use Criterium, and to avoid the JIT
+        ; droping the output from quick-bench, store the result...
+        (let [m (cc/quick-bench (compute-algorithm))]
+          ; ... 'check' it, and print a newline :-)
+          (if (nil? m) (printf "\n"))))
+      ; Regardless of benchmarking, flush stdout before dying.
+      (flush))))

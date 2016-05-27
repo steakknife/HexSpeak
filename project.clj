@@ -3,7 +3,8 @@
   :url "https://github.com/ttsiodras/HexSpeak"
   :license {:name "GNU Public License"
             :url "http://www.gnu.org/licenses/gpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure "1.7.0"]]
+  :dependencies [[org.clojure/clojure "1.7.0"]
+                 [criterium "0.4.4"]]
   :aot [thanassis.hexspeak]
   ; :main ^:skip-aot thanassis.hexspeak
   :main thanassis.hexspeak
