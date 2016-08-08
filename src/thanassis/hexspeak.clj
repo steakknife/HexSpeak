@@ -33,6 +33,16 @@
                      (good-words rdr letters))]
     (group-by #(.length ^String %) (concat candidates ["a"]))))
 
+
+(defn fast-contains?
+  [^java.util.Collection coll x]
+  (loop [it (.iterator coll)]
+    (if (.hasNext it)
+      (if (.equals (.next it) x)
+        true
+        (recur it))
+      false)))
+
 (defn solve
   "Using the list of valid options from our list of words,
   recurse to form complete phrases of the desired target-length,
@@ -41,7 +51,7 @@
   [words-per-length target-length phrase-len used-words counter]
   (dotimes [i (- target-length phrase-len)]
     (doseq [w (get words-per-length (inc i) [])]
-      (if (not (contains? used-words w))
+      (if (not (fast-contains? used-words w))
         (if (= target-length (+ i phrase-len 1))
           (vswap! counter inc) ;faster than swap! and atom
           (solve words-per-length target-length (+ phrase-len (inc i))
