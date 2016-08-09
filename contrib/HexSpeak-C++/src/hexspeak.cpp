@@ -27,7 +27,7 @@ list<string> getGoodWords(const string& filename)
     return goodWords;
 }
 
-void solve(
+int solve(
     // Use dirty tricks :-) - intern strings (i.e. use their
     // insides (const char*) instead of actual 'wrapper'
     // string instances, use vectors instead of
@@ -36,24 +36,22 @@ void solve(
     //
     // In plain words: BEEP BEEP (Java falls in pieces :-)
     //
-    const vector<vector<const char *>>& wordsByLength,
+    vector<int>& wordsByLength,
     int targetLength,
-    int phraseLength,
-    vector<const char *>& usedWords)
+    int phraseLength)
 {
+    int counter = 0;
     for(int i=1; i<targetLength-phraseLength+1; i++) {
-        for(const auto &w: wordsByLength[i]) {
-            if(find(usedWords.begin(), usedWords.end(), w) == usedWords.end()) {
-                if (phraseLength+i == targetLength) {
-                    counter++;
-                } else {
-                    usedWords.push_back(w);
-                    solve(wordsByLength, targetLength, phraseLength+i, usedWords);
-                    usedWords.pop_back();
-                }
-            }
+        if (phraseLength+i == targetLength) {
+            counter += wordsByLength[i];
+        } else {
+            int t = wordsByLength[i];
+            --wordsByLength[i];
+            counter += t * solve(wordsByLength, targetLength, phraseLength+i);
+            wordsByLength[i] = t;
         }
     }
+    return counter;
 }
 
 int main(int argc, char *argv[])
@@ -63,14 +61,12 @@ int main(int argc, char *argv[])
     const string letters = (argc<3)?"abcdef":argv[2];
     const string wordsFilename = (argc<4)?"../../words":argv[3];
     auto goodWords = getGoodWords(wordsFilename);
-    vector<vector<const char *>> wordsByLength(128);
+    vector<int> wordsByLength(128);
     for(const auto& word: goodWords)
-        wordsByLength[word.length()].push_back(word.c_str());
+        wordsByLength[word.length()]++;
     for(int i=0; i<10; i++) {
-        counter = 0;
-        auto usedWords = vector<const char *>();
         auto startTime = chrono::steady_clock::now();
-        solve(wordsByLength, targetLength, 0, usedWords);
+        counter = solve(wordsByLength, targetLength, 0);
         auto endTime = chrono::steady_clock::now();
         cout << counter << " in " << chrono::duration<double, milli>(endTime-startTime).count()  << " ms.\n";
     }
